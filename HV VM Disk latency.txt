@@ -1,0 +1,16 @@
+let Object = "Hyper-V Virtual Storage Device";
+let Counter = "Latency";
+
+let PerfData = Perf
+| where Computer matches regex "MGMT"
+| where ObjectName == Object  and CounterName == Counter;
+
+let InstancesToShow = PerfData
+| summarize AggregatedValue = percentile(CounterValue,80) by InstanceName 
+| sort by AggregatedValue desc | limit 10 | project InstanceName; 
+
+PerfData
+| where InstanceName in (InstancesToShow)
+| summarize avg(CounterValue) by InstanceName,bin(TimeGenerated,10m)
+| render timechart
+

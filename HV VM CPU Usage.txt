@@ -1,0 +1,21 @@
+let Object = "Hyper-V Hypervisor Virtual Processor";
+let Counter = "% Total Run Time";
+let NumberToShow = 10;
+let Percentile = 90;
+
+let PerfData = Perf
+| where Computer matches regex "MGMT"
+| where ObjectName == Object and CounterName == Counter
+| parse kind = regex InstanceName with "^" VMName ':' *;
+
+let InstancesToShow = PerfData
+| summarize AggregatedValue = percentile(CounterValue,Percentile) by VMName 
+| sort by AggregatedValue desc nulls last 
+| limit NumberToShow 
+| project VMName ; 
+
+PerfData
+| where VMName in (InstancesToShow)
+| summarize percentile(CounterValue,Percentile) by VMName,bin(TimeGenerated,10m)
+| sort by VMName
+| render timechart

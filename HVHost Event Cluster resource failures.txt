@@ -1,0 +1,7 @@
+Event
+| where EventID in (1069)
+| where Computer matches regex "MGMT"
+| parse EventData with * 'Data Name="ResourceName">' ResourceName '</Data>' *
+| project TimeGenerated,Computer,ResourceName,RenderedDescription
+| sort by TimeGenerated desc
+| render table

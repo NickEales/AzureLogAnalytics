@@ -1,0 +1,15 @@
+let Object = "Hyper-V Dynamic Memory VM";
+let Counter = "Average Pressure";
+
+let PerfData = Perf
+| where Computer matches regex "MGMT"
+| where ObjectName == Object  and CounterName == Counter
+
+let InstancesToShow = PerfData
+| summarize AggregatedValue = percentile(CounterValue,80) by InstanceName 
+| sort by AggregatedValue desc | limit 10 | project InstanceName; 
+
+PerfData
+| where InstanceName in (InstancesToShow)
+| summarize avg(CounterValue) by InstanceName,bin(TimeGenerated,30m)
+| render timechart

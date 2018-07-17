@@ -1,0 +1,17 @@
+let Object = "Network Interface";
+let Counter = "Bytes Total/sec";
+let NumberToShow = 20;
+
+let PerfData = Perf
+| where Computer matches regex "MGMT"
+| where ObjectName == Object and CounterName == Counter
+| extend ComputerInstance= strcat(split(Computer,'.',0),InstanceName);
+
+let InstancesToShow = PerfData
+| summarize AggregatedValue = percentile(CounterValue,80) by ComputerInstance
+| sort by AggregatedValue desc nulls last | limit NumberToShow | project ComputerInstance; 
+
+PerfData
+| where ComputerInstance in (InstancesToShow)
+| summarize percentile(CounterValue,80) by ComputerInstance,bin(TimeGenerated,10m)
+| render timechart

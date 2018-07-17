@@ -1,0 +1,20 @@
+let Object = "Hyper-V Virtual Storage Device";
+let NumberToShow = 10;
+let Percentile = 90;
+
+let PerfData = Perf
+| where Computer matches regex "MGMT"
+| where ObjectName == Object and ( CounterName == "Read Bytes/sec" or CounterName == "Write Bytes/sec" )
+| extend CounterInstance= strcat(InstanceName,'-',CounterName);
+
+let InstancesToShow = PerfData
+| summarize AggregatedValue = percentile(CounterValue,Percentile) by CounterInstance
+| sort by AggregatedValue desc nulls last 
+| limit NumberToShow 
+| project CounterInstance; 
+
+PerfData
+| where CounterInstance in (InstancesToShow)
+| summarize percentile(CounterValue,Percentile) by CounterInstance,bin(TimeGenerated,10m)
+| sort by CounterInstance
+| render timechart
